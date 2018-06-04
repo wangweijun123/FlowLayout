@@ -58,6 +58,7 @@ public class TagFlowLayout extends FlowLayout
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        Log.w(FlowLayout.TAG,  "TagFlowLayout  onMeasure ... mIsInitDataFinished:"+mIsInitDataFinished);
         int cCount = getChildCount();
         for (int i = 0; i < cCount; i++) {
             TagView tagView = (TagView) getChildAt(i);
@@ -68,7 +69,45 @@ public class TagFlowLayout extends FlowLayout
                 tagView.setVisibility(View.GONE);
             }
         }
+
+        if (mIsInitDataFinished) {
+            setFirstLine(widthMeasureSpec, heightMeasureSpec);
+        }
+
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    private void setFirstLine(int widthMeasureSpec, int heightMeasureSpec) {
+        int sizeWidth = MeasureSpec.getSize(widthMeasureSpec);
+        // wrap_content
+        int width = 0;
+        int lineWidth = 0;
+
+        int cCount = getChildCount();
+        boolean isFirstLine = true;
+        Log.i(TAG, "onMeasure ...mShowAll:" + mShowAll + ", cCount:"+cCount);
+        for (int i = 0; i < cCount; i++) {
+            View child = getChildAt(i);
+            measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            MarginLayoutParams lp = (MarginLayoutParams) child
+                    .getLayoutParams();
+
+            int childWidth = child.getMeasuredWidth() + lp.leftMargin
+                    + lp.rightMargin;
+            if (isFirstLine) {
+                if (lineWidth + childWidth > sizeWidth - getPaddingLeft() - getPaddingRight() - moreWidth) {
+                    width = Math.max(width, lineWidth);
+                    lineWidth = childWidth;
+                    isFirstLine = false;
+                    child.setVisibility(View.GONE);
+                } else {
+                    lineWidth += childWidth;
+                    child.setVisibility(View.VISIBLE);
+                }
+            } else {
+                child.setVisibility(View.GONE);
+            }
+        }
     }
 
 
@@ -81,7 +120,10 @@ public class TagFlowLayout extends FlowLayout
         mOnTagClickListener = onTagClickListener;
     }
 
+
     public void setAdapter(TagAdapter adapter) {
+        mIsInitDataFinished = true;
+        Log.w(FlowLayout.TAG, "setAdapter ... ");
         mTagAdapter = adapter;
         mTagAdapter.setOnDataChangedListener(this);
         mSelectedView.clear();
@@ -101,8 +143,6 @@ public class TagFlowLayout extends FlowLayout
             tagView.setDuplicateParentStateEnabled(true);
             if (tagView.getLayoutParams() != null) {
                 tagViewContainer.setLayoutParams(tagView.getLayoutParams());
-
-
             } else {
                 MarginLayoutParams lp = new MarginLayoutParams(
                         LayoutParams.WRAP_CONTENT,

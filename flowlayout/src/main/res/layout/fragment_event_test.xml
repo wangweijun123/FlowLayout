@@ -1,11 +1,24 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:zhy="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <com.zhy.view.flowlayout.TagFlowLayout
         android:id="@+id/id_flowlayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         zhy:max_select="-1"></com.zhy.view.flowlayout.TagFlowLayout><!--android:padding="20dp"-->
-</LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:drawableRight="@mipmap/icon_arrow_right"
+        android:text="更多"
+        android:id="@+id/switchBtn"/>
+
+
+</FrameLayout>

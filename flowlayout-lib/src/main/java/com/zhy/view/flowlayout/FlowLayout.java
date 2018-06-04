@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.util.LayoutDirection;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.text.TextUtilsCompat;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class FlowLayout extends ViewGroup {
-    private static final String TAG = "FlowLayout";
+    public static final String TAG = "FlowLayout";
     private static final int LEFT = -1;
     private static final int CENTER = 0;
     private static final int RIGHT = 1;
@@ -63,7 +64,8 @@ public class FlowLayout extends ViewGroup {
         int lineHeight = 0;
 
         int cCount = getChildCount();
-
+        Log.i(TAG, "onMeasure ...mShowAll:" + mShowAll + ", cCount:"+cCount);
+        boolean isFirstLine = true;
         for (int i = 0; i < cCount; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() == View.GONE) {
@@ -82,29 +84,46 @@ public class FlowLayout extends ViewGroup {
             int childHeight = child.getMeasuredHeight() + lp.topMargin
                     + lp.bottomMargin;
 
-            if (lineWidth + childWidth > sizeWidth - getPaddingLeft() - getPaddingRight()) {
-                width = Math.max(width, lineWidth);
-                lineWidth = childWidth;
-                height += lineHeight;
-                lineHeight = childHeight;
+
+            if (isFirstLine) {
+                if (lineWidth + childWidth > sizeWidth - getPaddingLeft() - getPaddingRight() - moreWidth) {
+                    width = Math.max(width, lineWidth);
+                    lineWidth = childWidth;
+                    height += lineHeight;
+                    lineHeight = childHeight;
+                    isFirstLine = false;
+                } else {
+                    lineWidth += childWidth;
+                    lineHeight = Math.max(lineHeight, childHeight);
+                }
             } else {
-                lineWidth += childWidth;
-                lineHeight = Math.max(lineHeight, childHeight);
+                if (lineWidth + childWidth > sizeWidth - getPaddingLeft() - getPaddingRight()) {
+                    width = Math.max(width, lineWidth);
+                    lineWidth = childWidth;
+                    height += lineHeight;
+                    lineHeight = childHeight;
+                } else {
+                    lineWidth += childWidth;
+                    lineHeight = Math.max(lineHeight, childHeight);
+                }
             }
+
+
             if (i == cCount - 1) {
                 width = Math.max(lineWidth, width);
                 height += lineHeight;
             }
         }
-        setMeasuredDimension(
-                //
-                modeWidth == MeasureSpec.EXACTLY ? sizeWidth : width + getPaddingLeft() + getPaddingRight(),
-                modeHeight == MeasureSpec.EXACTLY ? sizeHeight : height + getPaddingTop() + getPaddingBottom()//
-        );
+
+        Log.i(TAG, "height:"+height);
+        int cwidth = (modeWidth == MeasureSpec.EXACTLY ? sizeWidth : width + getPaddingLeft() + getPaddingRight());
+        int cHeight = (modeHeight == MeasureSpec.EXACTLY ? sizeHeight : height + getPaddingTop() + getPaddingBottom());
+        Log.i(TAG, "cwidth:"+cwidth + ", cHeight:"+cHeight);
+        setMeasuredDimension(cwidth, cHeight);
 
     }
 
-
+    public static int moreWidth = 100;
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         mAllViews.clear();
@@ -118,9 +137,13 @@ public class FlowLayout extends ViewGroup {
         int lineHeight = 0;
 
         int cCount = getChildCount();
+        Log.i(TAG, "onLayout ... cCount:"+cCount + ", mShowAll:"+mShowAll);
+        boolean isFirstLine = true;
+
 
         for (int i = 0; i < cCount; i++) {
             View child = getChildAt(i);
+            Log.i(TAG, i + " : child.getVisibility() == View.GONE ? "+ (child.getVisibility() == View.GONE));
             if (child.getVisibility() == View.GONE) continue;
             MarginLayoutParams lp = (MarginLayoutParams) child
                     .getLayoutParams();
@@ -128,35 +151,52 @@ public class FlowLayout extends ViewGroup {
             int childWidth = child.getMeasuredWidth();
             int childHeight = child.getMeasuredHeight();
 
-            if (childWidth + lineWidth + lp.leftMargin + lp.rightMargin > width - getPaddingLeft() - getPaddingRight()) {
-                mLineHeight.add(lineHeight);
-                mAllViews.add(lineViews);
-                mLineWidth.add(lineWidth);
+            if (isFirstLine) {
+                if (childWidth + lineWidth + lp.leftMargin + lp.rightMargin > width - getPaddingLeft() - getPaddingRight() - moreWidth ) {
+                    mLineHeight.add(lineHeight);
+                    mAllViews.add(lineViews);
+                    mLineWidth.add(lineWidth);
 
-                lineWidth = 0;
-                lineHeight = childHeight + lp.topMargin + lp.bottomMargin;
-                lineViews = new ArrayList<View>();
+                    lineWidth = 0;
+                    lineHeight = childHeight + lp.topMargin + lp.bottomMargin;
+                    lineViews = new ArrayList<View>();
+                    isFirstLine = false;
+                }
+            } else {
+                if (childWidth + lineWidth + lp.leftMargin + lp.rightMargin > width - getPaddingLeft() - getPaddingRight()) {
+                    mLineHeight.add(lineHeight);
+                    mAllViews.add(lineViews);
+                    mLineWidth.add(lineWidth);
+
+                    lineWidth = 0;
+                    lineHeight = childHeight + lp.topMargin + lp.bottomMargin;
+                    lineViews = new ArrayList<View>();
+                }
             }
+
+
             lineWidth += childWidth + lp.leftMargin + lp.rightMargin;
             lineHeight = Math.max(lineHeight, childHeight + lp.topMargin
                     + lp.bottomMargin);
             lineViews.add(child);
-
         }
+
         mLineHeight.add(lineHeight);
         mLineWidth.add(lineWidth);
         mAllViews.add(lineViews);
+
 
 
         int left = getPaddingLeft();
         int top = getPaddingTop();
 
         int lineNum = mAllViews.size();
-
+        Log.i(TAG, "mAllViews lineNum:"+lineNum + ", mLineHeight size:"+mLineHeight.size());
         for (int i = 0; i < lineNum; i++) {
             lineViews = mAllViews.get(i);
-            lineHeight = mLineHeight.get(i);
 
+            lineHeight = mLineHeight.get(i);
+            Log.i(TAG, "第"+i+"行view的个数为:"+lineViews.size() + ", lineHeight:"+lineHeight);
             // set gravity
             int currentLineWidth = this.mLineWidth.get(i);
             switch (this.mGravity) {
@@ -176,6 +216,8 @@ public class FlowLayout extends ViewGroup {
 
             for (int j = 0; j < lineViews.size(); j++) {
                 View child = lineViews.get(j);
+                Log.i(TAG, "      "+j + "   子view是否显示: (child.getVisibility() == View.GONE)"
+                        + (child.getVisibility() == View.GONE));
                 if (child.getVisibility() == View.GONE) {
                     continue;
                 }
@@ -187,7 +229,7 @@ public class FlowLayout extends ViewGroup {
                 int tc = top + lp.topMargin;
                 int rc = lc + child.getMeasuredWidth();
                 int bc = tc + child.getMeasuredHeight();
-
+                Log.i(TAG, "      lc:"+lc+", tc:"+tc+", rc:"+rc+", bc:"+bc);
                 child.layout(lc, tc, rc, bc);
 
                 left += child.getMeasuredWidth() + lp.leftMargin
@@ -195,7 +237,35 @@ public class FlowLayout extends ViewGroup {
             }
             top += lineHeight;
         }
+        mIsInitDataFinished = false;
+    }
 
+    public boolean mIsInitDataFinished = false;
+
+    public boolean mShowAll = false;
+
+    public void switchShow() {
+        mShowAll = !mShowAll;
+
+        int cCount = getChildCount();
+        Log.i(TAG, "switchShow mShowAll:"+mShowAll + ", cCount:"+cCount);
+        for (int i = 0; i < cCount; i++) {
+            if (mShowAll) {
+                getChildAt(i).setVisibility(View.VISIBLE);
+            } else {
+                getChildAt(i).setVisibility(View.GONE);
+            }
+        }
+        int lineNum = mAllViews.size();
+        if (lineNum > 0) {// 处理第一行
+            List<View> lineViews = mAllViews.get(0);
+            int lineViewSize = lineViews.size();
+            for (int j=0; j<lineViewSize; j++) {
+                lineViews.get(j).setVisibility(View.VISIBLE);
+            }
+        }
+
+        requestLayout();
     }
 
     @Override

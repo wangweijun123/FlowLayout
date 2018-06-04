@@ -14,8 +14,8 @@ public class CategoryActivity extends AppCompatActivity
     private ViewPager mViewPager;
 
     private String[] mTabTitles = new String[]
-            {"Muli Selected", "Limit 3",
-                    "Event Test", "ScrollView Test", "Single Choose", "Gravity", "ListView Sample"};
+            {"Muli Selected"/*, "Limit 3",
+                    "Event Test", "ScrollView Test", "Single Choose", "Gravity", "ListView Sample"*/};
 
 
     @Override
